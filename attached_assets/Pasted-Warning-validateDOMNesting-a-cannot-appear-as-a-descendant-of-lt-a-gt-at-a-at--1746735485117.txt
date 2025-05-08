@@ -1,0 +1,41 @@
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of &lt;a&gt;.
+    at a
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PALV7G7K.js?v=268e2fca:42:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LXTJ4TFU.js?v=268e2fca:79:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LXTJ4TFU.js?v=268e2fca:56:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PALV7G7K.js?v=268e2fca:42:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LXTJ4TFU.js?v=268e2fca:79:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LXTJ4TFU.js?v=268e2fca:56:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5P3VKGX5.js?v=268e2fca:51:15
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-navigation-menu.js?v=268e2fca:731:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-navigation-menu.js?v=268e2fca:409:13
+    at a
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=268e2fca:337:18
+    at li
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PALV7G7K.js?v=268e2fca:42:13
+    at Provider (https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VJRUVGTI.js?v=268e2fca:38:15)
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-navigation-menu.js?v=268e2fca:282:13
+    at ul
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PALV7G7K.js?v=268e2fca:42:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LXTJ4TFU.js?v=268e2fca:79:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LXTJ4TFU.js?v=268e2fca:56:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PALV7G7K.js?v=268e2fca:42:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LXTJ4TFU.js?v=268e2fca:79:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LXTJ4TFU.js?v=268e2fca:56:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5P3VKGX5.js?v=268e2fca:39:15
+    at Provider (https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VJRUVGTI.js?v=268e2fca:38:15)
+    at CollectionProvider (https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5P3VKGX5.js?v=268e2fca:29:13)
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-navigation-menu.js?v=268e2fca:722:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LXTJ4TFU.js?v=268e2fca:79:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LXTJ4TFU.js?v=268e2fca:56:13
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5P3VKGX5.js?v=268e2fca:39:15
+    at div
+    at https://1c23e83c-2c05-45f4-9159-20ff13a156cf-00-1ey5msx5a57wa.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PALV7G7K.js?v=268e2fca:42:13
+    at…
+Cannot read properties of undefined (reading 'match')
+Authentication check failed: 
+Error {}
+
+Failed to fetch storefront data: 
+Error {}
+

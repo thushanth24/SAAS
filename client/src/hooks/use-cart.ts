@@ -1,0 +1,16 @@
+import { useContext } from 'react';
+import { CartContext } from '@/contexts/CartContext';
+
+/**
+ * Hook for accessing cart context
+ * @returns Cart context with items, totals, and cart methods
+ */
+export function useCart() {
+  const context = useContext(CartContext);
+  
+  if (context === undefined) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  
+  return context;
+}
