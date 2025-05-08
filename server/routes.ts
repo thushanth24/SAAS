@@ -338,7 +338,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid credentials" });
       }
       
-      // Generate and store OTP
+      // Special case for test user - auto login without OTP
+      if (user.email === "test@example.com" && user.username === "testuser") {
+        console.log("Auto-logging in test user");
+        
+        // Set session
+        req.session.userId = user.id;
+        
+        // Get user stores to return in response
+        const stores = await storage.getStoresByOwnerId(user.id);
+        
+        return res.status(200).json({
+          message: "Test user authenticated successfully",
+          skipOTP: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            phone: user.phone,
+            username: user.username,
+            role: user.role,
+          },
+          stores: stores.map(store => ({
+            id: store.id,
+            name: store.name,
+            subdomain: store.subdomain,
+            logo: store.logo,
+          })),
+        });
+      }
+      
+      // For regular users, generate and store OTP
       const otpCode = generateOTP();
       const expiryTime = new Date();
       expiryTime.setMinutes(expiryTime.getMinutes() + 10); // OTP valid for 10 minutes

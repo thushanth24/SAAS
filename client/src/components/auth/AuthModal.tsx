@@ -88,6 +88,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'l
       const res = await apiRequest("POST", "/api/auth/login", data);
       const result = await res.json();
       
+      // Check for test user auto-login
+      if (result.skipOTP && result.user) {
+        toast({
+          title: "Success",
+          description: "Authentication successful!",
+        });
+        onClose();
+        window.location.href = "/dashboard";
+        return;
+      }
+      
+      // Normal OTP flow
       if (result.userId) {
         setUserId(result.userId);
         setUserEmail(data.email);
