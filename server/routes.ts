@@ -180,39 +180,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup store route - for testing with dummy data
   app.post("/api/setup/test-store", async (req, res) => {
     try {
-      // Create test user
-      const user = await storage.createUser({
-        username: "testuser",
-        password: "password123", 
-        email: "test@example.com",
-        phone: "1234567890",
-        role: "store_owner"
-      });
+      // Check if test user already exists
+      let user = await storage.getUserByUsername("testuser");
       
-      console.log("Created test user:", user);
+      if (!user) {
+        // Create test user if it doesn't exist
+        user = await storage.createUser({
+          username: "testuser",
+          password: "password123", 
+          email: "test@example.com",
+          phone: "1234567890",
+          role: "store_owner"
+        });
+        console.log("Created test user:", user);
+      } else {
+        console.log("Using existing test user:", user);
+      }
       
-      // Create test store
-      const store = await storage.createStore({
-        ownerId: user.id,
-        name: "Test Store",
-        subdomain: "test-store",
-        description: "A test store",
-        logo: "",
-        theme: {
-          primaryColor: "#4F46E5",
-          secondaryColor: "#f97316",
-          fontFamily: "Inter",
-        },
-        plan: "basic",
-      });
+      // Check if store already exists 
+      let store = await storage.getStoreBySubdomain("test-store");
       
-      console.log("Created test store:", store);
+      if (!store) {
+        // Create test store if it doesn't exist
+        store = await storage.createStore({
+          ownerId: user.id,
+          name: "Test Store",
+          subdomain: "test-store",
+          description: "A test store",
+          logo: "",
+          theme: {
+            primaryColor: "#4F46E5",
+            secondaryColor: "#f97316",
+            fontFamily: "Inter",
+          },
+          plan: "basic",
+        });
+        console.log("Created test store:", store);
+      } else {
+        console.log("Using existing test store:", store);
+      }
       
       // Set session
       req.session.userId = user.id;
       
       res.status(200).json({
-        message: "Test store created successfully",
+        message: "Test store setup complete",
         user: {
           id: user.id,
           email: user.email,
@@ -227,8 +239,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error("Error creating test store:", error);
-      res.status(500).json({ message: "Failed to create test store" });
+      console.error("Error setting up test store:", error);
+      res.status(500).json({ message: "Failed to set up test store" });
     }
   });
 
