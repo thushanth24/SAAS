@@ -679,4 +679,315 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { db } from './db';
+import { and, eq } from 'drizzle-orm';
+
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.phone, phone));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUser(id: number, data: Partial<User>): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+  
+  async updateUserStripeInfo(id: number, data: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User> {
+    return this.updateUser(id, data);
+  }
+
+  // OTP operations
+  async createOTP(insertOtp: InsertOTP): Promise<OTP> {
+    const [otp] = await db.insert(otps).values(insertOtp).returning();
+    return otp;
+  }
+
+  async getOTPByUserId(userId: number): Promise<OTP | undefined> {
+    const [otp] = await db
+      .select()
+      .from(otps)
+      .where(and(eq(otps.userId, userId), eq(otps.isUsed, false)))
+      .orderBy(otps.createdAt);
+    return otp;
+  }
+
+  async validateOTP(userId: number, otpCode: string): Promise<boolean> {
+    const otp = await this.getOTPByUserId(userId);
+    if (!otp) return false;
+    if (otp.otp !== otpCode) return false;
+    if (otp.expiresAt < new Date()) return false;
+    return true;
+  }
+
+  async markOTPAsUsed(id: number): Promise<OTP> {
+    const [otp] = await db
+      .update(otps)
+      .set({ isUsed: true })
+      .where(eq(otps.id, id))
+      .returning();
+    return otp;
+  }
+
+  // Store operations
+  async getStore(id: number): Promise<Store | undefined> {
+    const [store] = await db.select().from(stores).where(eq(stores.id, id));
+    return store;
+  }
+
+  async getStoreBySubdomain(subdomain: string): Promise<Store | undefined> {
+    const [store] = await db.select().from(stores).where(eq(stores.subdomain, subdomain));
+    return store;
+  }
+
+  async getStoresByOwnerId(ownerId: number): Promise<Store[]> {
+    return db.select().from(stores).where(eq(stores.ownerId, ownerId));
+  }
+
+  async createStore(insertStore: InsertStore): Promise<Store> {
+    const [store] = await db.insert(stores).values(insertStore).returning();
+    return store;
+  }
+
+  async updateStore(id: number, data: Partial<Store>): Promise<Store> {
+    const [store] = await db
+      .update(stores)
+      .set(data)
+      .where(eq(stores.id, id))
+      .returning();
+    return store;
+  }
+
+  // Category operations
+  async getCategory(id: number): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category;
+  }
+
+  async getCategoriesByStoreId(storeId: number): Promise<Category[]> {
+    return db.select().from(categories).where(eq(categories.storeId, storeId));
+  }
+
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const [category] = await db.insert(categories).values(insertCategory).returning();
+    return category;
+  }
+
+  async updateCategory(id: number, data: Partial<Category>): Promise<Category> {
+    const [category] = await db
+      .update(categories)
+      .set(data)
+      .where(eq(categories.id, id))
+      .returning();
+    return category;
+  }
+
+  async deleteCategory(id: number): Promise<boolean> {
+    await db.delete(categories).where(eq(categories.id, id));
+    return true;
+  }
+
+  // Product operations
+  async getProduct(id: number): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
+  }
+
+  async getProductsByStoreId(storeId: number): Promise<Product[]> {
+    return db.select().from(products).where(eq(products.storeId, storeId));
+  }
+
+  async getProductsByCategory(categoryId: number): Promise<Product[]> {
+    return db.select().from(products).where(eq(products.categoryId, categoryId));
+  }
+
+  async getFeaturedProducts(storeId: number, limit: number = 4): Promise<Product[]> {
+    return db
+      .select()
+      .from(products)
+      .where(and(eq(products.storeId, storeId), eq(products.featured, true)))
+      .limit(limit);
+  }
+
+  async createProduct(insertProduct: InsertProduct): Promise<Product> {
+    const [product] = await db.insert(products).values(insertProduct).returning();
+    return product;
+  }
+
+  async updateProduct(id: number, data: Partial<Product>): Promise<Product> {
+    const [product] = await db
+      .update(products)
+      .set(data)
+      .where(eq(products.id, id))
+      .returning();
+    return product;
+  }
+
+  async deleteProduct(id: number): Promise<boolean> {
+    await db.delete(products).where(eq(products.id, id));
+    return true;
+  }
+
+  // Customer operations
+  async getCustomer(id: number): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(eq(customers.id, id));
+    return customer;
+  }
+
+  async getCustomersByStoreId(storeId: number): Promise<Customer[]> {
+    return db.select().from(customers).where(eq(customers.storeId, storeId));
+  }
+
+  async getCustomerByEmail(email: string, storeId: number): Promise<Customer | undefined> {
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(and(eq(customers.email, email), eq(customers.storeId, storeId)));
+    return customer;
+  }
+
+  async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
+    const [customer] = await db.insert(customers).values(insertCustomer).returning();
+    return customer;
+  }
+
+  // Cart operations
+  async getCart(id: number): Promise<Cart | undefined> {
+    const [cart] = await db.select().from(carts).where(eq(carts.id, id));
+    return cart;
+  }
+
+  async getCartBySessionId(sessionId: string): Promise<Cart | undefined> {
+    const [cart] = await db.select().from(carts).where(eq(carts.sessionId, sessionId));
+    return cart;
+  }
+
+  async getCartByCustomerId(customerId: number): Promise<Cart | undefined> {
+    const [cart] = await db.select().from(carts).where(eq(carts.customerId, customerId));
+    return cart;
+  }
+
+  async createCart(insertCart: InsertCart): Promise<Cart> {
+    const [cart] = await db.insert(carts).values(insertCart).returning();
+    return cart;
+  }
+
+  async deleteCart(id: number): Promise<boolean> {
+    await db.delete(carts).where(eq(carts.id, id));
+    return true;
+  }
+
+  // Cart Item operations
+  async getCartItems(cartId: number): Promise<CartItem[]> {
+    return db.select().from(cartItems).where(eq(cartItems.cartId, cartId));
+  }
+
+  async addCartItem(insertCartItem: InsertCartItem): Promise<CartItem> {
+    const [cartItem] = await db.insert(cartItems).values(insertCartItem).returning();
+    return cartItem;
+  }
+
+  async updateCartItemQuantity(id: number, quantity: number): Promise<CartItem> {
+    const [cartItem] = await db
+      .update(cartItems)
+      .set({ quantity })
+      .where(eq(cartItems.id, id))
+      .returning();
+    return cartItem;
+  }
+
+  async removeCartItem(id: number): Promise<boolean> {
+    await db.delete(cartItems).where(eq(cartItems.id, id));
+    return true;
+  }
+
+  // Order operations
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
+
+  async getOrdersByStoreId(storeId: number): Promise<Order[]> {
+    return db.select().from(orders).where(eq(orders.storeId, storeId));
+  }
+
+  async getOrdersByCustomerId(customerId: number): Promise<Order[]> {
+    return db.select().from(orders).where(eq(orders.customerId, customerId));
+  }
+
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const [order] = await db.insert(orders).values(insertOrder).returning();
+    return order;
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<Order> {
+    const [order] = await db
+      .update(orders)
+      .set({ status })
+      .where(eq(orders.id, id))
+      .returning();
+    return order;
+  }
+
+  // Order Item operations
+  async getOrderItems(orderId: number): Promise<OrderItem[]> {
+    return db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  }
+
+  async createOrderItem(insertOrderItem: InsertOrderItem): Promise<OrderItem> {
+    const [orderItem] = await db.insert(orderItems).values(insertOrderItem).returning();
+    return orderItem;
+  }
+
+  // Subscription Plan operations
+  async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
+    const [plan] = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, id));
+    return plan;
+  }
+
+  async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return db.select().from(subscriptionPlans);
+  }
+
+  async createSubscriptionPlan(insertPlan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
+    const [plan] = await db.insert(subscriptionPlans).values(insertPlan).returning();
+    return plan;
+  }
+
+  async updateSubscriptionPlan(id: number, data: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> {
+    const [plan] = await db
+      .update(subscriptionPlans)
+      .set(data)
+      .where(eq(subscriptionPlans.id, id))
+      .returning();
+    return plan;
+  }
+}
+
+// Switch to database storage
+export const storage = new DatabaseStorage();
