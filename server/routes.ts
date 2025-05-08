@@ -176,12 +176,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/health", (req, res) => {
     res.status(200).json({ status: "ok" });
   });
+  
+  // Setup store route - for testing with dummy data
+  app.post("/api/setup/test-store", async (req, res) => {
+    try {
+      // Create test user
+      const user = await storage.createUser({
+        username: "testuser",
+        password: "password123", 
+        email: "test@example.com",
+        phone: "1234567890",
+        role: "store_owner"
+      });
+      
+      console.log("Created test user:", user);
+      
+      // Create test store
+      const store = await storage.createStore({
+        ownerId: user.id,
+        name: "Test Store",
+        subdomain: "test-store",
+        description: "A test store",
+        logo: "",
+        theme: {
+          primaryColor: "#4F46E5",
+          secondaryColor: "#f97316",
+          fontFamily: "Inter",
+        },
+        plan: "basic",
+      });
+      
+      console.log("Created test store:", store);
+      
+      // Set session
+      req.session.userId = user.id;
+      
+      res.status(200).json({
+        message: "Test store created successfully",
+        user: {
+          id: user.id,
+          email: user.email,
+          phone: user.phone,
+          username: user.username,
+          role: user.role,
+        },
+        store: {
+          id: store.id,
+          name: store.name,
+          subdomain: store.subdomain,
+        }
+      });
+    } catch (error) {
+      console.error("Error creating test store:", error);
+      res.status(500).json({ message: "Failed to create test store" });
+    }
+  });
 
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const data = registerSchema.parse(req.body);
+      console.log("Registration request body:", req.body);
       
-      console.log("Registration request:", data);
+      // Manually validate each field to provide detailed error messages
+      if (!req.body.storeName) {
+        return res.status(400).json({ message: "Store name is required" });
+      }
+      if (!req.body.subdomain) {
+        return res.status(400).json({ message: "Subdomain is required" });
+      }
+      if (!req.body.email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      if (!req.body.phone) {
+        return res.status(400).json({ message: "Phone number is required" });
+      }
+      if (!req.body.password) {
+        return res.status(400).json({ message: "Password is required" });
+      }
+      
+      const data = registerSchema.parse(req.body);
+      console.log("Registration data validated successfully:", data);
       
       // Check if user already exists
       const existingUserByEmail = await storage.getUserByEmail(data.email);

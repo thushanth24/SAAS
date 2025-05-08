@@ -133,6 +133,39 @@ const SetupPage = () => {
     }
   };
 
+  const createTestStore = async () => {
+    setIsLoading(true);
+
+    try {
+      const response = await apiRequest('POST', '/api/setup/test-store');
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: "Test Store Created",
+          description: "You can now access the dashboard.",
+        });
+        setLocation('/dashboard');
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Setup Failed",
+          description: errorData.message || "Could not create test store",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating test store:", error);
+      toast({
+        title: "Setup Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Helmet>
@@ -146,6 +179,19 @@ const SetupPage = () => {
           <CardDescription>
             Get started with your own online store in minutes
           </CardDescription>
+          <div className="mt-4">
+            <Button 
+              variant="outline" 
+              onClick={createTestStore}
+              disabled={isLoading}
+              className="w-full"
+            >
+              {isLoading ? "Creating Test Store..." : "Quick Setup (Test Store)"}
+            </Button>
+            <p className="text-xs text-gray-500 mt-2">
+              Use this option to create a demo store with dummy data
+            </p>
+          </div>
         </CardHeader>
 
         {otpSent ? (
