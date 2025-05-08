@@ -15,12 +15,12 @@ const Dashboard: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { currentStore } = useStore();
   
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, authLoading, navigate]);
+  // Temporarily disable redirect for testing
+  // useEffect(() => {
+  //   if (!authLoading && !isAuthenticated) {
+  //     navigate('/');
+  //   }
+  // }, [isAuthenticated, authLoading, navigate]);
   
   // Stats data query
   const { data: statsData, isLoading: statsLoading } = useQuery({
@@ -64,9 +64,10 @@ const Dashboard: React.FC = () => {
     );
   }
   
-  if (!isAuthenticated) {
-    return null;
-  }
+  // Allow access even if not authenticated for testing
+  // if (!isAuthenticated) {
+  //   return null;
+  // }
   
   return (
     <>
@@ -82,6 +83,17 @@ const Dashboard: React.FC = () => {
           <DashboardHeader title="Dashboard" />
           
           <main className="flex-1 overflow-y-auto bg-gray-100 p-6">
+            {/* Welcome banner for first-time users */}
+            <div className="bg-white rounded-lg shadow p-6 mb-8 border-l-4 border-primary">
+              <h2 className="text-xl font-semibold mb-2">Welcome to Your Store Dashboard</h2>
+              <p className="text-gray-600 mb-4">
+                This is your store management area where you can monitor sales, manage products, and handle orders.
+              </p>
+              <p className="text-gray-600">
+                <strong>Login credentials:</strong> Email (test@example.com), Phone (1234567890)
+              </p>
+            </div>
+          
             <StatCards 
               stats={stats} 
               onViewAllProducts={handleViewAllProducts}

@@ -78,11 +78,11 @@ const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading }) => {
               {orders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">#{order.id.toString().padStart(4, '0')}</TableCell>
-                  <TableCell>{order.customer.name}</TableCell>
+                  <TableCell>{order.customer?.name || 'Guest Customer'}</TableCell>
                   <TableCell>{formatDate(order.createdAt)}</TableCell>
                   <TableCell>{formatCurrency(order.total)}</TableCell>
                   <TableCell>
-                    <OrderStatusBadge status={order.status} />
+                    <OrderStatusBadge status={order.status || 'pending'} />
                   </TableCell>
                   <TableCell>
                     <Link href={`/orders/${order.id}`}>
