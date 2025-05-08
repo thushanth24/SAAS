@@ -21,15 +21,26 @@ import ProductDetail from "@/pages/ProductDetail";
 import CartPage from "@/pages/CartPage";
 import CheckoutPage from "@/pages/CheckoutPage";
 import SetupPage from "@/pages/SetupPage";
+import TestLogin from "@/pages/TestLogin";
 import useSubdomain from "./hooks/use-subdomain";
 
 function Router() {
   const { subdomain, isStorefront, isLoading } = useSubdomain();
   
-  // Special case for setup page - always accessible regardless of subdomain
+  // Special case for certain pages - always accessible regardless of subdomain
   const location = window.location.pathname;
   if (location === '/setup') {
     return <SetupPage />;
+  }
+  
+  // Added test login page for direct access
+  if (location === '/test-login') {
+    return <TestLogin />;
+  }
+  
+  // Added login page exception - always show dashboard for testing
+  if (location === '/dashboard' || location === '/login') {
+    return <Dashboard />;
   }
 
   // Show loading state while determining routing
@@ -49,6 +60,7 @@ function Router() {
         <Route path="/products/:productId" component={ProductDetail} />
         <Route path="/cart" component={CartPage} />
         <Route path="/checkout" component={CheckoutPage} />
+        <Route path="/dashboard" component={Dashboard} />
         <Route component={NotFound} />
       </Switch>
     );
