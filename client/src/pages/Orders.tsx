@@ -34,7 +34,6 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Helmet } from 'react-helmet';
-
 const statusColors = {
   pending: "bg-yellow-100 text-yellow-800",
   processing: "bg-blue-100 text-blue-800",
@@ -42,7 +41,16 @@ const statusColors = {
   delivered: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800",
 };
-
+// Function to fetch orders
+const fetchOrders = async (storeId: number) => {
+  const response = await apiRequest('GET', `/api/stores/${storeId}/orders`);
+  return response.json();
+};
+// Function to fetch customer orders
+const fetchCustomerOrders = async (customerId: number) => {
+  const response = await apiRequest('GET', `/api/customers/${customerId}/orders`);
+  return response.json();
+};
 const Orders: React.FC = () => {
   const { currentStore } = useStore();
   const { toast } = useToast();
@@ -52,9 +60,10 @@ const Orders: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   
-  // Fetch orders
-  const { data: orders, isLoading } = useQuery({
-    queryKey: ['/api/stores', currentStore?.id, 'orders'],
+  // Fetch orders - using proper queryFn
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ['orders', currentStore?.id],
+    queryFn: () => currentStore?.id ? fetchOrders(currentStore.id) : Promise.resolve([]),
     enabled: !!currentStore?.id,
   });
   
@@ -64,7 +73,7 @@ const Orders: React.FC = () => {
       return apiRequest('PATCH', `/api/orders/${orderId}/status`, { status });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/stores', currentStore?.id, 'orders'] });
+      queryClient.invalidateQueries({ queryKey: ['orders', currentStore?.id] });
       toast({
         title: "Order status updated",
         description: "The order status has been successfully updated",
@@ -88,8 +97,7 @@ const Orders: React.FC = () => {
       order.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer?.email?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = !statusFilter || order.status === statusFilter;
-    
+      const matchesStatus = !statusFilter || statusFilter === "all" || order.status === statusFilter;    
     return matchesSearch && matchesStatus;
   }) : [];
   
@@ -150,7 +158,7 @@ const Orders: React.FC = () => {
                         <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Statuses</SelectItem>
+                        <SelectItem value="all">All Statuses</SelectItem>
                         <SelectItem value="pending">Pending</SelectItem>
                         <SelectItem value="processing">Processing</SelectItem>
                         <SelectItem value="shipped">Shipped</SelectItem>

@@ -329,10 +329,16 @@ export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
 export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
 
 // Extended validation schemas for registration and login
-export const registerSchema = insertUserSchema.extend({
+export const registerSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   storeName: z.string().min(3, "Store name must be at least 3 characters"),
-  subdomain: z.string().min(3, "Subdomain must be at least 3 characters"),
+  subdomain: z.string()
+    .min(3, "Subdomain must be at least 3 characters")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Subdomain can only contain lowercase letters, numbers, and hyphens"),
 });
+
 
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),

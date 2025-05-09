@@ -9,6 +9,13 @@ import { useAuth } from '@/hooks/use-auth';
 import { useStore } from '@/hooks/use-store';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet';
+import { apiRequest } from '@/lib/queryClient';
+
+// Create a custom fetch function for the queries
+const fetchData = async (url: string) => {
+  const response = await apiRequest('GET', url);
+  return response.json();
+};
 
 const Dashboard: React.FC = () => {
   const [location, navigate] = useLocation();
@@ -22,33 +29,30 @@ const Dashboard: React.FC = () => {
   //   }
   // }, [isAuthenticated, authLoading, navigate]);
   
-  // Stats data query
-  const { data: statsData, isLoading: statsLoading } = useQuery({
-    queryKey: ['/api/stores', currentStore?.id, 'stats'],
+  // Recent orders query - using a proper fetchData function
+  const { data: recentOrders = [], isLoading: ordersLoading } = useQuery({
+    queryKey: ['orders', currentStore?.id],
+    queryFn: () => currentStore?.id ? fetchData(`/api/stores/${currentStore.id}/orders`) : Promise.resolve([]),
     enabled: !!currentStore?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
-  // Recent orders query
-  const { data: recentOrders, isLoading: ordersLoading } = useQuery({
-    queryKey: ['/api/stores', currentStore?.id, 'orders'],
+  // Recent products query - using a proper fetchData function
+  const { data: recentProducts = [], isLoading: productsLoading } = useQuery({
+    queryKey: ['products', currentStore?.id],
+    queryFn: () => currentStore?.id ? fetchData(`/api/stores/${currentStore.id}/products`) : Promise.resolve([]),
     enabled: !!currentStore?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
-  // Recent products query
-  const { data: recentProducts, isLoading: productsLoading } = useQuery({
-    queryKey: ['/api/stores', currentStore?.id, 'products'],
-    enabled: !!currentStore?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-  
-  // Mock data for initial development
-  const stats = statsData || {
-    orders: 125,
-    revenue: 8459,
-    customers: 243,
-    products: 56,
+  // Calculate stats from available data or use fallback values
+  const stats = {
+    orders: recentOrders?.length || 0,
+    revenue: Array.isArray(recentOrders) 
+      ? recentOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0) 
+      : 0,
+    customers: 0, // We'd need a separate API call for this
+    products: recentProducts?.length || 0,
   };
   
   // Navigate to products page
@@ -89,9 +93,11 @@ const Dashboard: React.FC = () => {
               <p className="text-gray-600 mb-4">
                 This is your store management area where you can monitor sales, manage products, and handle orders.
               </p>
-              <p className="text-gray-600">
-                <strong>Login credentials:</strong> Email (test@example.com), Phone (1234567890)
-              </p>
+              {currentStore && (
+                <p className="text-gray-600">
+                  <strong>Current Store:</strong> {currentStore.name}
+                </p>
+              )}
             </div>
           
             <StatCards 

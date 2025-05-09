@@ -3,6 +3,7 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import { useStore } from '@/hooks/use-store';
 import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
@@ -25,35 +26,43 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDate, getInitials, getGravatarUrl } from '@/lib/utils';
 import { Helmet } from 'react-helmet';
-
+// Function to fetch customers
+const fetchCustomers = async (storeId: number) => {
+  const response = await apiRequest('GET', `/api/stores/${storeId}/customers`);
+  return response.json();
+};
+// Function to fetch customer orders
+const fetchCustomerOrders = async (customerId: number) => {
+  const response = await apiRequest('GET', `/api/customers/${customerId}/orders`);
+  return response.json();
+};
 const Customers: React.FC = () => {
   const { currentStore } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [customerDetailDialogOpen, setCustomerDetailDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   
-  // Fetch customers
-  const { data: customers, isLoading } = useQuery({
-    queryKey: ['/api/stores', currentStore?.id, 'customers'],
+  // Fetch customers - using proper queryFn
+  const { data: customers = [], isLoading } = useQuery({
+    queryKey: ['customers', currentStore?.id],
+    queryFn: () => currentStore?.id ? fetchCustomers(currentStore.id) : Promise.resolve([]),
     enabled: !!currentStore?.id,
   });
+
+  // In your Customers.tsx file, add this code right after where you define customers:
+
+// Filter customers based on search query
+const filteredCustomers = customers ? customers.filter(customer => 
+  !searchQuery ||
+  customer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  customer.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  customer.phone?.includes(searchQuery)
+) : [];
   
-  // Filter customers based on search query
-  const filteredCustomers = customers ? customers.filter(customer => 
-    !searchQuery ||
-    customer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.phone?.includes(searchQuery)
-  ) : [];
-  
-  const viewCustomerDetails = (customer: any) => {
-    setSelectedCustomer(customer);
-    setCustomerDetailDialogOpen(true);
-  };
-  
-  // Fetch customer orders
-  const { data: customerOrders, isLoading: ordersLoading } = useQuery({
-    queryKey: ['/api/customers', selectedCustomer?.id, 'orders'],
+  // Fetch customer orders - using proper queryFn
+  const { data: customerOrders = [], isLoading: ordersLoading } = useQuery({
+    queryKey: ['customerOrders', selectedCustomer?.id],
+    queryFn: () => selectedCustomer?.id ? fetchCustomerOrders(selectedCustomer.id) : Promise.resolve([]),
     enabled: !!selectedCustomer?.id,
   });
   

@@ -23,7 +23,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -41,15 +40,25 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Helmet } from 'react-helmet';
 
+interface CategoryType {
+  id: number;
+  name: string;
+  description?: string | null;
+  image?: string | null;
+  productCount?: number;
+}
 // Form validation schema
 const categorySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().optional(),
   image: z.string().optional(),
 });
-
 type CategoryFormData = z.infer<typeof categorySchema>;
-
+// Function to fetch categories
+const fetchCategories = async (storeId: number) => {
+  const response = await apiRequest('GET', `/api/stores/${storeId}/categories`);
+  return response.json();
+};
 const Categories: React.FC = () => {
   const { currentStore } = useStore();
   const { toast } = useToast();
@@ -67,10 +76,13 @@ const Categories: React.FC = () => {
       image: '',
     },
   });
+
   
-  // Fetch categories
-  const { data: categories, isLoading } = useQuery({
-    queryKey: ['/api/stores', currentStore?.id, 'categories'],
+  
+  // Fetch categories - using proper queryFn
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ['categories', currentStore?.id],
+    queryFn: () => currentStore?.id ? fetchCategories(currentStore.id) : Promise.resolve([]),
     enabled: !!currentStore?.id,
   });
   
@@ -80,7 +92,7 @@ const Categories: React.FC = () => {
       return apiRequest('POST', `/api/stores/${currentStore?.id}/categories`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/stores', currentStore?.id, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories', currentStore?.id] });
       toast({
         title: "Category created",
         description: "The category has been successfully created",
@@ -103,7 +115,7 @@ const Categories: React.FC = () => {
       return apiRequest('PATCH', `/api/categories/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/stores', currentStore?.id, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories', currentStore?.id] });
       toast({
         title: "Category updated",
         description: "The category has been successfully updated",
@@ -127,7 +139,7 @@ const Categories: React.FC = () => {
       return apiRequest('DELETE', `/api/categories/${categoryId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/stores', currentStore?.id, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories', currentStore?.id] });
       toast({
         title: "Category deleted",
         description: "The category has been successfully deleted",
@@ -181,6 +193,7 @@ const Categories: React.FC = () => {
       createCategoryMutation.mutate(data);
     }
   };
+  
   
   if (!currentStore) {
     return (
@@ -244,7 +257,7 @@ const Categories: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {categories.map((category) => (
+                        {categories.map((category:CategoryType) => (
                           <TableRow key={category.id}>
                             <TableCell className="font-medium">
                               <div className="flex items-center">

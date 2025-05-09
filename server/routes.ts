@@ -10,6 +10,9 @@ import { fromZodError } from "zod-validation-error";
 import crypto from "crypto";
 import { createAndSendOTP, verifyOTP } from "./services/otp";
 
+
+
+// Extend Express Request type to include subdomain
 // Extend Express Request type to include subdomain
 declare global {
   namespace Express {
@@ -17,21 +20,45 @@ declare global {
       subdomain?: string;
     }
   }
-  
-  // Extend session
-  namespace Express.Session {
-    interface SessionData {
-      userId?: number;
-      cartSessionId?: string;
-      pendingRegistration?: {
-        userId: number;
-        storeName: string;
-        subdomain: string;
-      };
-      customerId?: number;
-    }
+}
+
+// Extend express-session
+import 'express-session';
+
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    cartSessionId?: string;
+    pendingRegistration?: {
+      userId: number;
+      storeName: string;
+      subdomain: string;
+    };
+    customerId?: number;
   }
 }
+
+interface ShippingAddress {
+  address: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
+// Define a product type if you haven't already
+interface ProductType {
+  id: number;
+  name: string;
+  price: string; // or number, depending on your schema
+  description?: string | null;
+  image?: string;
+  images?: string[] | null;
+  // Add other properties your product has
+}
+
+// Then use the type when declaring the variable
+let featuredProducts: ProductType[] = [];
 
 // Use the augmented Request type
 type Request = ExpressRequest;
@@ -256,69 +283,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       console.log("Registration request body:", req.body);
-      
-      // Manually validate each field to provide detailed error messages
-      if (!req.body.storeName) {
-        return res.status(400).json({ message: "Store name is required" });
-      }
-      if (!req.body.subdomain) {
-        return res.status(400).json({ message: "Subdomain is required" });
-      }
-      if (!req.body.email) {
-        return res.status(400).json({ message: "Email is required" });
-      }
-      if (!req.body.phone) {
-        return res.status(400).json({ message: "Phone number is required" });
-      }
-      if (!req.body.password) {
-        return res.status(400).json({ message: "Password is required" });
-      }
-      
+  
+      // ✅ Validate using Zod only
       const data = registerSchema.parse(req.body);
       console.log("Registration data validated successfully:", data);
-      
+  
       // Check if user already exists
       const existingUserByEmail = await storage.getUserByEmail(data.email);
       if (existingUserByEmail) {
         return res.status(400).json({ message: "Email already in use" });
       }
-      
+  
       const existingUserByPhone = await storage.getUserByPhone(data.phone);
       if (existingUserByPhone) {
         return res.status(400).json({ message: "Phone number already in use" });
       }
-      
+  
       // Check if subdomain is available
       const existingStore = await storage.getStoreBySubdomain(data.subdomain);
       if (existingStore) {
         return res.status(400).json({ message: "Subdomain already in use" });
       }
-      
+  
       // Create user
       const username = data.email.split("@")[0];
       const user = await storage.createUser({
         username,
-        password: data.password, // In a real app, hash this password
+        password: data.password, // NOTE: In production, hash this!
         email: data.email,
         phone: data.phone,
         role: "store_owner",
       });
-      
+  
       // Generate OTP and send it via SMS
       const otpResult = await createAndSendOTP(user.id, user.phone);
-      
       if (!otpResult.success) {
         console.error("Failed to send OTP:", otpResult.message);
-        // Continue anyway since we're in development mode with placeholder credentials
+        // Continue anyway since we're in development mode
       }
-      
-      // Store data temporarily in session for completion after OTP verification
+  
+      // Temporarily store registration info in session
       req.session.pendingRegistration = {
         userId: user.id,
         storeName: data.storeName,
         subdomain: data.subdomain,
       };
-      
+  
       res.status(200).json({
         message: "Registration initiated. Please verify your phone number with the OTP.",
         userId: user.id,
@@ -327,9 +337,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof ZodError) {
         return res.status(400).json({ message: fromZodError(error).message });
       }
+      console.error("Registration error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  
 
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -600,9 +612,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storeId: cart.storeId,
         customerId: customerId,
         status: "paid",
-        total: parseFloat(paymentIntent.amount.toString()) / 100, // Convert cents to dollars
-        shippingAddress: JSON.stringify(shippingAddress),
-        paymentIntentId: paymentIntent.id
+        total: (parseFloat(paymentIntent.amount.toString()) / 100).toString(), // Convert cents to dollars and to string
+        shippingAddress: shippingAddress, // Make sure this matches the expected type
+        paymentId: paymentIntent.id // Use paymentId instead of paymentIntentId
+        // OR if you need to store both:
+        // paymentMethod: "stripe",
+        // paymentId: paymentIntent.id
       });
 
       // Create order items
@@ -656,8 +671,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const categories = await storage.getCategoriesByStoreId(store.id);
           
           // Get featured products
-          let featuredProducts;
-          try {
+          let featuredProducts: ProductType[] | null = null;
+      try {
             featuredProducts = await storage.getFeaturedProducts(store.id, 4);
           } catch (error) {
             console.error('Error getting featured products:', error);
@@ -786,8 +801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categories = await storage.getCategoriesByStoreId(testStore.id);
       
       // Get featured products or return empty array if none exist
-      let featuredProducts;
-      try {
+      let featuredProducts: ProductType[] | null = null;      try {
         featuredProducts = await storage.getFeaturedProducts(testStore.id, 4);
       } catch (error) {
         console.error('Error getting featured products:', error);
