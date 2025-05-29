@@ -7,7 +7,7 @@ dotenv.config();
 
 // Configure WebSocket for Neon
 neonConfig.webSocketConstructor = ws;
-neonConfig.wsProxy = (url) => url; // Add this line to prevent proxy issues
+neonConfig.wsProxy = (url) => url;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -15,29 +15,50 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Add connection retry logic
-const createPool = (retries = 5, delay = 1000) => {
+// Sleep helper function
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Add connection retry logic with exponential backoff
+const createPool = async (maxRetries = 5, initialDelay = 1000) => {
   let lastError;
+  let delay = initialDelay;
   
-  for (let i = 0; i < retries; i++) {
+  for (let i = 0; i < maxRetries; i++) {
     try {
-      return new Pool({ 
+      const pool = new Pool({ 
         connectionString: process.env.DATABASE_URL,
         connectionTimeoutMillis: 5000, // 5 second timeout
         max: 20 // Limit pool size
       });
+      
+      // Test the connection
+      await pool.connect();
+      console.log('Database connection established successfully');
+      return pool;
     } catch (error) {
       lastError = error;
-      if (i < retries - 1) {
+      if (i < maxRetries - 1) {
         console.warn(`Database connection attempt ${i + 1} failed, retrying in ${delay}ms...`);
-        // Sleep for delay milliseconds
-        new Promise(resolve => setTimeout(resolve, delay));
+        await sleep(delay);
+        // Exponential backoff with jitter
+        delay = Math.min(delay * 1.5, 10000) * (0.9 + Math.random() * 0.2);
       }
     }
   }
   
-  throw lastError;
+  throw new Error(`Failed to connect to database after ${maxRetries} attempts: ${lastError?.message}`);
 };
 
-export const pool = createPool();
-export const db = drizzle(pool, { schema });
+// Initialize pool and db with proper error handling
+let pool: Pool;
+let db: ReturnType<typeof drizzle>;
+
+try {
+  pool = await createPool();
+  db = drizzle(pool, { schema });
+} catch (error) {
+  console.error('Fatal: Failed to initialize database connection:', error);
+  throw error;
+}
+
+export { pool, db };
