@@ -7,7 +7,9 @@ dotenv.config();
 
 // Configure WebSocket for Neon
 neonConfig.webSocketConstructor = ws;
-neonConfig.wsProxy = (url) => url;
+
+// Remove the wsProxy configuration as we're using direct connection
+// neonConfig.wsProxy = (url) => url;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -27,7 +29,7 @@ const createPool = async (maxRetries = 5, initialDelay = 1000) => {
     try {
       const pool = new Pool({ 
         connectionString: process.env.DATABASE_URL,
-        connectionTimeoutMillis: 5000, // 5 second timeout
+        connectionTimeoutMillis: 10000, // Increased timeout to 10 seconds
         max: 20 // Limit pool size
       });
       
@@ -37,8 +39,10 @@ const createPool = async (maxRetries = 5, initialDelay = 1000) => {
       return pool;
     } catch (error) {
       lastError = error;
+      console.error(`Database connection attempt ${i + 1} failed:`, error);
+      
       if (i < maxRetries - 1) {
-        console.warn(`Database connection attempt ${i + 1} failed, retrying in ${delay}ms...`);
+        console.warn(`Retrying in ${delay}ms...`);
         await sleep(delay);
         // Exponential backoff with jitter
         delay = Math.min(delay * 1.5, 10000) * (0.9 + Math.random() * 0.2);
