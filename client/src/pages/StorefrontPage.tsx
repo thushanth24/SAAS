@@ -1,13 +1,11 @@
-import React, { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React from 'react';
 import { Link } from 'wouter';
-import { apiRequest } from '@/lib/queryClient';
 import { useStore } from '@/hooks/use-store';
 import { useTenant } from '@/hooks/use-tenant';
 import { useCart } from '@/hooks/use-cart';
 import { Button } from '@/components/ui/button';
 import { Helmet } from 'react-helmet';
-import { useSubdomain } from '@/hooks/use-subdomain'; // Changed to named import
+import { useSubdomain } from '@/hooks/use-subdomain';
 
 import {
   Card,
@@ -20,9 +18,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/components/storefront/Header';
 import Footer from '@/components/storefront/Footer';
-import { Product } from '@shared/schema';
 
-// Define proper types for products and categories
 interface CategoryType {
   id: number;
   name: string;
@@ -33,78 +29,25 @@ interface ProductType {
   id: number;
   name: string;
   description: string | null;
-  price: number; // Using number instead of string for prices
+  price: number;
   images: string[] | null;
-  discountPercentage?: number; // Add missing field
-  image?: string; // Add explicit image field
+  discountPercentage?: number;
+  image?: string;
 }
 
-// First, let's define an interface for the tenant
 interface TenantType {
   storeId: string;
 }
 
 const StorefrontPage: React.FC = () => {
   const { subdomain } = useSubdomain();
-  // Use type assertion to clarify the tenant type
   const { tenant } = useTenant() as { tenant: TenantType | null };
   const { storefrontData, isLoading: storeLoading } = useStore();
   const { addItem } = useCart();
   
-  // Use the subdomain as a fallback if tenant is not available
   const storeId = tenant?.storeId || subdomain;
   
-  console.log('StorefrontPage - storeId:', storeId);
-  console.log('StorefrontPage - tenant:', tenant);
-  console.log('StorefrontPage - subdomain:', subdomain);
-  
-  // Fetch featured products
-  const { data: featuredProducts, isLoading: productsLoading } = useQuery({
-    queryKey: [`/api/stores/${storeId}/products/featured`],
-    queryFn: () => {
-      if (!storeId) return Promise.resolve([]);
-      console.log(`Fetching featured products for store ${storeId}`);
-      return apiRequest('GET', `/api/stores/${storeId}/products/featured`)
-        .then(res => res.json())
-        .catch(err => {
-          console.error('Error fetching featured products:', err);
-          return [];
-        });
-    },
-    enabled: !!storeId,
-  });
-  
-  // Fetch store data if not available through useStore
-  const { data: storeData, isLoading: storeDataLoading } = useQuery({
-    queryKey: [`/api/stores/${storeId}`],
-    queryFn: () => {
-      if (!storeId) return Promise.resolve(null);
-      console.log(`Fetching store data for ${storeId}`);
-      return apiRequest('GET', `/api/stores/${storeId}`)
-        .then(res => res.json())
-        .catch(err => {
-          console.error('Error fetching store data:', err);
-          return null;
-        });
-    },
-    enabled: !!storeId && !storefrontData,
-  });
-  
-  const isLoading = storeLoading || productsLoading || storeDataLoading;
-  
-  // Use storefrontData from useStore or fallback to directly fetched storeData
-  const displayData = storefrontData || storeData;
-  
-  useEffect(() => {
-    console.log('StorefrontPage data:', {
-      storeId,
-      storefrontData,
-      storeData,
-      featuredProducts
-    });
-  }, [storeId, storefrontData, storeData, featuredProducts]);
-  
-  if (isLoading) {
+  if (storeLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -134,7 +77,7 @@ const StorefrontPage: React.FC = () => {
     );
   }
   
-  if (!displayData || (!tenant && !subdomain)) {
+  if (!storefrontData || (!tenant && !subdomain)) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -142,10 +85,6 @@ const StorefrontPage: React.FC = () => {
           <div className="text-center py-16">
             <h2 className="text-2xl font-bold mb-4">Store Not Found</h2>
             <p className="text-gray-600 mb-8">The store you're looking for doesn't exist or is no longer available.</p>
-            <p className="text-gray-500">Debug info:</p>
-            <pre className="bg-gray-100 p-4 rounded text-left mx-auto max-w-2xl overflow-auto">
-              {JSON.stringify({ tenant, subdomain, storeId }, null, 2)}
-            </pre>
           </div>
         </main>
         <Footer />
@@ -153,14 +92,13 @@ const StorefrontPage: React.FC = () => {
     );
   }
   
-  const { store, categories } = displayData;
+  const { store, categories, featuredProducts = [] } = storefrontData;
   
-  // Add product to cart handler
   const handleAddToCart = (product: ProductType) => {
     addItem({
       id: product.id,
       name: product.name,
-      price: typeof product.price === 'string' ? parseFloat(product.price) : product.price, // Convert string to number if needed
+      price: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
       image: product.image || (product.images && product.images.length > 0 ? product.images[0] : '/placeholder-product.png'),
       quantity: 1,
     });
@@ -176,7 +114,6 @@ const StorefrontPage: React.FC = () => {
       <Header />
       
       <main className="flex-grow container mx-auto px-4 py-8">
-        {/* Hero Section */}
         <section className="bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg p-8 mb-12">
           <div className="max-w-3xl">
             <h1 className="text-4xl font-bold mb-4">{store.name}</h1>
@@ -203,7 +140,6 @@ const StorefrontPage: React.FC = () => {
           </div>
         </section>
         
-        {/* Categories Section */}
         {categories && categories.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-bold mb-6">Categories</h2>
@@ -235,17 +171,13 @@ const StorefrontPage: React.FC = () => {
           </section>
         )}
         
-        {/* Featured Products Section */}
         <section>
           <h2 className="text-2xl font-bold mb-6">Featured Products</h2>
           {featuredProducts && featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredProducts.map((product: ProductType) => {
-                // Extract image from product
                 const productImage = product.image || (product.images && product.images.length > 0 ? product.images[0] : null);
-                // Calculate discount if available
                 const hasDiscount = typeof product.discountPercentage === 'number' && product.discountPercentage > 0;
-                // Convert price to number if it's a string
                 const productPrice = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
                 
                 return (
