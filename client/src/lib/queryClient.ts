@@ -1,7 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-async function throwIfResNotOk(res: Response) {
-  if (!res.ok) {
+async function throwIfResNotOk(res: Response, allowStatuses: number[] = []) {
+  if (!res.ok && !allowStatuses.includes(res.status)) {
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
@@ -11,6 +11,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  allowStatuses: number[] = []
 ): Promise<Response> {
   const res = await fetch(url, {
     method,
@@ -19,7 +20,7 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  await throwIfResNotOk(res);
+  await throwIfResNotOk(res, allowStatuses);
   return res;
 }
 
@@ -44,7 +45,7 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
+      queryFn: getQueryFn({ on401: "returnNull" }), // Changed to returnNull by default
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,

@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const res = await apiRequest('GET', '/api/auth/session');
+      const res = await apiRequest('GET', '/api/auth/session', undefined, [401]);
       const data = await res.json();
       
       if (data.authenticated) {
